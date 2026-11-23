@@ -64,15 +64,5 @@ RandomAPI → n8n → Azure Blob Storage (Bronze) → Azure Event Grid → Azure
 - `power-bi/` – Power BI dashboard files.
 - `screenshots/` – Project screenshots.
 
-## Future Enhancements
-
-- Incremental data processing and duplicate prevention.
-- Advanced data quality framework.
-- Payment risk analytics and anomaly detection.
-- Apache Kafka event streaming.
-- Pipeline monitoring and alerting.
-- Azure security and CI/CD integration.
-
----
 
 **Note:** This project uses simulated payment transaction data from a public REST API for learning and demonstration purposes. It is not connected to a real payment gateway or banking system.
