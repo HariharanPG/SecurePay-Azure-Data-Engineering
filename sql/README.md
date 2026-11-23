@@ -1,53 +1,52 @@
-# SecurePay SQL assets
+# SecurePay SQL Assets
 
-This folder documents the SQL Server / Azure SQL Database portion of SecurePay. The intended flow is:
+This folder contains SQL validation, monitoring and execution queries for the SecurePay Azure SQL Database.
 
-```text
-Azure Blob Storage (Bronze) → Azure Data Factory → dbo.StagingTransactions
-                                               → dbo.usp_LoadSilver
-                                               → dbo.SilverTransactions / dbo.RejectedTransactions
-                                               → dbo.usp_LoadGold
-                                               → Gold summary tables → Power BI
-```
+## Database objects
 
-## Database layers
+| Object | Purpose |
+|---|---|
+| `dbo.StagingTransactions` | Receives transaction records copied from Bronze JSON files by Azure Data Factory. |
+| `dbo.SilverTransactions` | Stores validated transaction records. |
+| `dbo.RejectedTransactions` | Stores records rejected by Silver-layer validation. |
+| `dbo.GoldTransactionSummary` | Stores the overall transaction summary produced by the Gold procedure. |
+| `dbo.GoldPaymentTypeSummary` | Stores the payment-type summary produced by the Gold procedure. |
 
-- **Staging (`dbo.StagingTransactions`)** — raw transaction records loaded by Azure Data Factory. Treat this as the source for Silver processing.
-- **Silver (`dbo.SilverTransactions`)** — validated and deduplicated transactions used for downstream analysis.
-- **Rejected (`dbo.RejectedTransactions`)** — records that fail the required validation checks. The described rules reject missing transaction IDs; null or non-positive amounts; and missing currency, transaction type, transaction status, or transaction timestamp.
-- **Gold (`dbo.GoldTransactionSummary`, `dbo.GoldPaymentTypeSummary`)** — aggregate tables refreshed from Silver for reporting and Power BI.
+## Stored procedures
 
-## Schema and implementation verification
+- `dbo.usp_LoadSilver`: validates staging records, routes invalid records to the rejected table, deduplicates valid records using `ROW_NUMBER()`, and avoids inserting transaction IDs already present in Silver.
+- `dbo.usp_LoadGold`: refreshes the Gold summary tables from Silver. The implemented procedure truncates and reloads the summary tables.
 
-The repository currently contains only a short SQL README; it does not contain original table definitions or stored procedure source. Consequently, this folder does **not** claim proposed column types, keys, constraints, defaults, rejection-table shape, Gold aggregate expressions, deduplication sort order, or other unverified details as the original SecurePay schema. The numbered SQL files mark the missing implementation details for verification instead of silently inventing them. In particular, the `CREATE TABLE` and procedure sections are documentation scaffolds, not deployable definitions, until reconciled with the actual database/project artifacts.
+The exact deployed table DDL and full stored procedure definitions should be exported from Azure SQL and committed as separate scripts. This repository does not substitute guessed definitions for the actual database objects.
 
-Before deploying DDL or procedures, obtain the authoritative definitions from the project database, Azure Data Factory mappings, and/or the original SQL source. In Azure Data Studio or SSMS, the table definitions can be scripted through **Object Explorer → table → Script Table as → CREATE To**. Verify the complete staging, Silver, rejected, and Gold schemas, including data types, nullability, keys, constraints, defaults, and indexes. Then replace the marked scaffolds with those verified definitions and test against a non-production database.
+## ADF execution sequence
 
-## Validation and transformation behavior
+1. `Truncate_SQL_Staging`
+2. `Get_Bronze_File_Metadata`
+3. `Copy_Bronze_To_SQL`
+4. `Load_Silver_Transactions`
+5. `Load_Gold_Summaries`
 
-`dbo.usp_LoadSilver` is described as validating staged rows, inserting invalid rows into Rejected, deduplicating candidates with `ROW_NUMBER()`, and using `NOT EXISTS` to avoid inserting transaction IDs already present in Silver. Confirm the exact column names, reject-reason representation, duplicate precedence/order, and behavior on repeat runs from the original implementation before deployment.
+ADF orchestrates the staging load and the two stored procedure calls. See `06_execute_procedures.sql` for controlled manual testing instructions.
 
-`dbo.usp_LoadGold` is described as truncating and reloading both Gold summaries from Silver. Confirm the exact grouping keys, aggregate expressions, destination columns, and transaction/locking behavior before running it in production. Because `TRUNCATE` empties a destination before reload, execute and validate this procedure with care.
+## Files
 
-## Execution order
+- `04_data_validation_queries.sql`: validates layer counts, transaction IDs and required Silver fields.
+- `05_monitoring_queries.sql`: provides operational summaries and recent transaction views.
+- `06_execute_procedures.sql`: manually executes the existing Silver and Gold stored procedures.
 
-After replacing and verifying the scaffolds, the intended operational order is:
+## Implementation notes
 
-1. Create or verify the five tables using `01_create_tables.sql`.
-2. Deploy `dbo.usp_LoadSilver` from `02_usp_LoadSilver.sql`.
-3. Deploy `dbo.usp_LoadGold` from `03_usp_LoadGold.sql`.
-4. Load raw records into staging with the configured ADF pipeline.
-5. Run `EXEC dbo.usp_LoadSilver;` and inspect counts/rejections using `04_data_validation_queries.sql`.
-6. Run `EXEC dbo.usp_LoadGold;` and review aggregates and recent processing with `05_monitoring_queries.sql`.
+- The source is simulated transaction data retrieved from a public REST API; it is not a real payment gateway.
+- The current ADF pipeline truncates SQL staging and copies files matching a Bronze wildcard. Treat repeated unattended execution carefully until incremental file tracking and idempotent staging ingestion are implemented.
+- The Silver procedure prevents duplicate transaction IDs in Silver, but the current rejected-record logic may add the same rejected record again on repeated executions.
+- Gold summary tables are refreshed from Silver; they are not an immutable transaction ledger.
 
-Silver must run before Gold so that Gold refreshes from the latest validated Silver data. The validation script includes procedure execution statements; run them deliberately, as they perform data changes.
+## Running the scripts
 
-## Running in Azure SQL Database
+1. Open the `securepay-sqldb` database in Azure SQL Query Editor or SQL Server Management Studio.
+2. Run read-only validation or monitoring queries as needed.
+3. Run the procedure execution script only after confirming staging contains the intended batch.
+4. Check Silver, Rejected and Gold results.
 
-1. Connect to the intended Azure SQL Database using Azure Data Studio, SSMS, or an approved deployment pipeline. Configure authentication outside these source files; never commit credentials, connection strings, or keys.
-2. Confirm the target database and review all schema/implementation verification notes in the numbered scripts.
-3. Replace documentation scaffolds only with definitions verified against the actual project schema and logic. Do not execute incomplete scaffold sections.
-4. Deploy table definitions, then procedures, in the order above. Use a development/test database first.
-5. Run validation and monitoring queries and compare their results with expected project behavior. No execution results are asserted by these files.
-
-All scripts target Microsoft SQL Server / Azure SQL T-SQL. `04_data_validation_queries.sql` and `05_monitoring_queries.sql` are operational queries; the table and stored-procedure scripts require the noted source-of-truth verification before deployment.
+Never commit passwords, connection strings, access keys, SAS tokens or other secrets.
