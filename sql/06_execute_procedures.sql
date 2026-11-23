@@ -1,36 +1,33 @@
 /*
     SecurePay - Stored Procedure Execution
 
-    Run this script only after the intended batch has been copied into
-    dbo.StagingTransactions and you are ready to process that batch.
+    Run only after the intended batch has been copied into
+    dbo.StagingTransactions and you are ready to process it.
 
     The ADF pipeline already orchestrates these procedure calls.
     This file is for controlled manual testing in Azure SQL.
 */
 
--- Step 1: Validate the staging batch before processing.
-SELECT COUNT_BIG(*) AS staging_record_count
+-- Step 1: Check that staging contains the expected batch.
+SELECT COUNT(*) AS StagingRecordCount
 FROM dbo.StagingTransactions;
 
 SELECT TOP (20) *
 FROM dbo.StagingTransactions;
 
--- Step 2: Load validated records into Silver and invalid records
--- into RejectedTransactions.
+-- Step 2: Validate staging records, load valid records into Silver,
+-- and route invalid records to RejectedTransactions.
 EXEC dbo.usp_LoadSilver;
 
 -- Step 3: Refresh the Gold summary tables from Silver.
 EXEC dbo.usp_LoadGold;
 
 -- Step 4: Verify the results.
-SELECT 'Silver' AS layer_name, COUNT_BIG(*) AS total_records
+SELECT 'Silver' AS Layer, COUNT(*) AS TotalRecords
 FROM dbo.SilverTransactions
 UNION ALL
-SELECT 'Rejected', COUNT_BIG(*)
+SELECT 'Rejected', COUNT(*)
 FROM dbo.RejectedTransactions;
 
-SELECT *
-FROM dbo.GoldTransactionSummary;
-
-SELECT *
-FROM dbo.GoldPaymentTypeSummary;
+SELECT * FROM dbo.GoldTransactionSummary;
+SELECT * FROM dbo.GoldPaymentTypeSummary;
