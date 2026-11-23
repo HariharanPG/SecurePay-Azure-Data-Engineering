@@ -1,39 +1,60 @@
 /*
-    SecurePay operational monitoring queries.
-    transaction_id and processed_timestamp are the column names referenced by
-    the project's supplied validation query. Gold summaries are selected as
-    whole rows because their exact column definitions are not present in the
-    repository; verify the authoritative schema before building column-specific
-    dashboards or alerts.
+    SecurePay - SQL Monitoring Queries
+    Read-only operational and business checks.
 */
 
--- Total Silver transactions
-SELECT COUNT(*) AS TotalSilverTransactions
-FROM dbo.SilverTransactions;
-
--- Total rejected transactions
-SELECT COUNT(*) AS TotalRejectedTransactions
-FROM dbo.RejectedTransactions;
-
--- Duplicate transaction IDs in Silver (only IDs occurring more than once)
+-- 1. Transaction count and total amount by transaction status.
 SELECT
-    transaction_id,
-    COUNT(*) AS Occurrences
+    transaction_status,
+    COUNT(*) AS TransactionCount,
+    SUM(amount) AS TotalAmount
 FROM dbo.SilverTransactions
-WHERE transaction_id IS NOT NULL
-GROUP BY transaction_id
-HAVING COUNT(*) > 1
-ORDER BY Occurrences DESC, transaction_id;
+GROUP BY transaction_status
+ORDER BY TransactionCount DESC;
 
--- Gold overall transaction summary
-SELECT *
-FROM dbo.GoldTransactionSummary;
+-- 2. Transaction count and total amount by transaction type.
+SELECT
+    transaction_type,
+    COUNT(*) AS TransactionCount,
+    SUM(amount) AS TotalAmount
+FROM dbo.SilverTransactions
+GROUP BY transaction_type
+ORDER BY TransactionCount DESC;
 
--- Gold payment-type summary
-SELECT *
-FROM dbo.GoldPaymentTypeSummary;
+-- 3. Transaction count and total amount by merchant.
+SELECT
+    merchant,
+    COUNT(*) AS TransactionCount,
+    SUM(amount) AS TotalAmount
+FROM dbo.SilverTransactions
+GROUP BY merchant
+ORDER BY TotalAmount DESC;
 
--- Latest processed transactions
-SELECT *
+-- 4. Daily transaction trend.
+SELECT
+    CAST(transaction_timestamp AS date) AS TransactionDate,
+    COUNT(*) AS TransactionCount,
+    SUM(amount) AS TotalAmount
+FROM dbo.SilverTransactions
+GROUP BY CAST(transaction_timestamp AS date)
+ORDER BY TransactionDate;
+
+-- 5. Latest processed Silver records.
+-- processed_timestamp is present in the observed Silver table output.
+SELECT TOP (100) *
 FROM dbo.SilverTransactions
 ORDER BY processed_timestamp DESC;
+
+-- 6. Current counts in the operational layers.
+SELECT 'Staging' AS Layer, COUNT(*) AS TotalRecords
+FROM dbo.StagingTransactions
+UNION ALL
+SELECT 'Silver', COUNT(*)
+FROM dbo.SilverTransactions
+UNION ALL
+SELECT 'Rejected', COUNT(*)
+FROM dbo.RejectedTransactions;
+
+-- 7. Inspect the Gold summary outputs.
+SELECT * FROM dbo.GoldTransactionSummary;
+SELECT * FROM dbo.GoldPaymentTypeSummary;
