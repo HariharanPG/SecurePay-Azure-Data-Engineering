@@ -4,65 +4,71 @@ An end-to-end data engineering project that automates the ingestion, processing 
 
 ## Project Overview
 
-SecurePay is designed to collect transaction data from an external REST API, store it in Azure Blob Storage, process it through a Medallion Architecture and visualize transaction insights using Power BI.
+SecurePay collects simulated transaction data from a public REST API, stores it in Azure Blob Storage, processes it through a Bronze-Silver-Gold data architecture and visualizes transaction insights using Power BI.
 
 ## Architecture
 
-**Data Flow:**
+**Data flow:**
 
-RandomAPI → n8n → Azure Blob Storage (Bronze) → Azure Event Grid → Azure Data Factory → Azure SQL Database (Staging → Silver → Gold) → Power BI
+RandomAPI → n8n → Azure Blob Storage (Bronze) → Azure Event Grid → Azure Data Factory → Azure SQL Database (Staging → Silver / Rejected → Gold) → Power BI
+
+See the [architecture documentation](architecture/README.md) for the Mermaid architecture diagram and component responsibilities.
 
 ## Technologies Used
 
-- **API Integration:** RandomAPI, REST API
-- **Workflow Automation:** n8n
-- **Cloud Platform:** Microsoft Azure
+- **API integration:** RandomAPI, REST API
+- **Workflow automation:** n8n Community Edition
+- **Cloud platform:** Microsoft Azure
 - **Storage:** Azure Blob Storage (ADLS Gen2)
-- **Event Processing:** Azure Event Grid
-- **Data Orchestration:** Azure Data Factory
+- **Event processing:** Azure Event Grid
+- **Data orchestration:** Azure Data Factory
 - **Database:** Azure SQL Database
-- **Query Language:** SQL
+- **Query language:** SQL
 - **Visualization:** Power BI
 
 ## Project Implementation
 
-### 1. Data Ingestion
-- Integrated an external REST API to retrieve simulated payment transactions.
-- Automated API requests using n8n.
-- Stored incoming JSON files in Azure Blob Storage.
+### 1. Data ingestion
+- Integrated a public REST API to retrieve simulated payment transactions.
+- Automated scheduled API requests using n8n.
+- Stored incoming JSON files in the Azure Blob Storage Bronze container.
 
-### 2. Data Orchestration
+### 2. Event-driven orchestration
 - Configured Azure Event Grid to detect newly created transaction files.
-- Triggered Azure Data Factory pipelines automatically.
+- Used a Blob Created event trigger to start the Azure Data Factory pipeline.
 
-### 3. Data Transformation
-- Implemented Bronze, Silver and Gold layers.
+### 3. Data transformation
 - Loaded raw transaction data into SQL staging.
-- Applied data validation and rejection handling.
-- Used SQL stored procedures for Silver and Gold transformations.
+- Applied SQL validation and rejection handling in the Silver layer.
+- Used stored procedures to create Gold transaction and payment-type summaries.
 
-### 4. Data Visualization
-- Developed an interactive Power BI dashboard.
-- Monitored transaction counts, amounts, payment statuses and transaction types.
-- Configured scheduled dashboard refresh.
+### 4. Data visualization
+- Developed a Power BI transaction monitoring dashboard.
+- Presented transaction counts, amounts, payment statuses and transaction types.
+- Published the report to Power BI Service and configured scheduled refresh.
 
 ## Key Learnings
 
-- REST API integration and automated data ingestion.
-- Azure Data Factory pipeline orchestration.
-- Event-driven data processing.
-- Medallion Architecture implementation.
-- SQL-based data validation and transformation.
-- Power BI dashboard development.
+- REST API integration and workflow automation.
+- Azure Blob Storage and event-driven processing.
+- Azure Data Factory orchestration.
+- Medallion Architecture and SQL transformations.
+- Data validation, deduplication and rejected-record handling.
+- Power BI reporting and scheduled refresh.
 
 ## Repository Structure
 
-- `architecture/` – Architecture diagrams and documentation.
-- `adf/` – Azure Data Factory documentation.
-- `sql/` – SQL scripts and stored procedures.
-- `n8n/` – n8n workflow documentation and export.
-- `power-bi/` – Power BI dashboard files.
-- `screenshots/` – Project screenshots.
+- [`architecture/`](architecture/README.md) – Architecture diagram and component documentation.
+- [`adf/`](adf/README.md) – Azure Data Factory pipeline and trigger documentation.
+- [`sql/`](sql/README.md) – SQL validation, monitoring and stored-procedure execution scripts.
+- [`n8n/`](n8n/README.md) – API ingestion workflow documentation.
+- [`power-bi/`](power-bi/README.md) – Dashboard documentation and location for the PBIX file.
+- [`screenshots/`](screenshots/README.md) – Suggested screenshots and safe-upload guidance.
 
+## Current Scope and Future Improvements
 
-**Note:** This project uses simulated payment transaction data from a public REST API for learning and demonstration purposes. It is not connected to a real payment gateway or banking system.
+The current implementation is a working portfolio baseline. Incremental file tracking, safe replay handling, stronger operational monitoring and additional security hardening are planned improvements. The current ADF pipeline truncates staging before copying its matching Bronze files, so it should not be treated as a fully hardened continuous ingestion design yet.
+
+## Disclaimer
+
+This project uses simulated payment transaction data from a public REST API for learning and demonstration. It is not connected to a real payment gateway or banking system and does not perform production fraud detection or payment processing.
