@@ -21,13 +21,14 @@ The exact deployed table DDL and full stored procedure definitions should be exp
 
 ## ADF execution sequence
 
-1. `Truncate_SQL_Staging`
-2. `Get_Bronze_File_Metadata`
-3. `Copy_Bronze_To_SQL`
-4. `Load_Silver_Transactions`
-5. `Load_Gold_Summaries`
+The current Azure Data Factory pipeline executes these four activities:
 
-ADF orchestrates the staging load and the two stored procedure calls. See `06_execute_procedures.sql` for controlled manual testing instructions.
+1. `Truncate_SQL_Staging`
+2. `Copy_Bronze_To_SQL`
+3. `Load_Silver_Transactions`
+4. `Load_Gold_Summaries`
+
+The pipeline does not include a metadata lookup activity. It uses its configured Bronze source path and file pattern for the copy operation.
 
 ## Files
 
@@ -38,7 +39,7 @@ ADF orchestrates the staging load and the two stored procedure calls. See `06_ex
 ## Implementation notes
 
 - The source is simulated transaction data retrieved from a public REST API; it is not a real payment gateway.
-- The current ADF pipeline truncates SQL staging and copies files matching a Bronze wildcard. Treat repeated unattended execution carefully until incremental file tracking and idempotent staging ingestion are implemented.
+- The current ADF pipeline truncates SQL staging and copies files matching a configured Bronze source pattern. Treat repeated unattended execution carefully until incremental file tracking and idempotent staging ingestion are implemented.
 - The Silver procedure prevents duplicate transaction IDs in Silver, but the current rejected-record logic may add the same rejected record again on repeated executions.
 - Gold summary tables are refreshed from Silver; they are not an immutable transaction ledger.
 
