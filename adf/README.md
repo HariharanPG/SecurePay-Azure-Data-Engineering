@@ -16,10 +16,9 @@ This folder documents the Azure Data Factory orchestration used in SecurePay.
 The working pipeline contains these five activities in sequence:
 
 1. **Truncate_SQL_Staging** – clears the staging table before the current copy operation.
-2. **Get_Bronze_File_Metadata** – obtains metadata for the matching Bronze file(s).
-3. **Copy_Bronze_To_SQL** – copies JSON transaction records from Blob Storage into SQL staging.
-4. **Load_Silver_Transactions** – executes the Silver validation and load procedure.
-5. **Load_Gold_Summaries** – executes the Gold summary refresh procedure.
+2. **Copy_Bronze_To_SQL** – copies JSON transaction records from Blob Storage into SQL staging.
+3. **Load_Silver_Transactions** – executes the Silver validation and load procedure.
+4. **Load_Gold_Summaries** – executes the Gold summary refresh procedure.
 
 ## Source JSON mapping
 
