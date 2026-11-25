@@ -50,6 +50,3 @@ A successful test run was followed by SQL checks showing 60 records in Staging, 
 
 The current pipeline is the original working baseline. It truncates staging and uses a wildcard source file pattern. Before treating it as a robust continuous ingestion design, add processed-file tracking, incremental staging loads, retry/recovery handling and protection against overlapping executions.
 
-## Exporting the actual ADF artifacts
-
-The deployed pipeline JSON, dataset JSON, linked-service definitions and trigger JSON should be exported from the ADF authoring interface and added here when available. Remove secrets and environment-specific credentials before committing. This documentation describes the verified design; it is not a substitute for those exported deployment artifacts.
