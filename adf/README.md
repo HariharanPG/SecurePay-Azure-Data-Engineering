@@ -13,12 +13,14 @@ This folder documents the Azure Data Factory orchestration used in SecurePay.
 
 ## Pipeline activities
 
-The working pipeline contains these five activities in sequence:
+The current pipeline uses four activities in sequence:
 
 1. **Truncate_SQL_Staging** – clears the staging table before the current copy operation.
-2. **Copy_Bronze_To_SQL** – copies JSON transaction records from Blob Storage into SQL staging.
+2. **Copy_Bronze_To_SQL** – copies transaction records from the Bronze JSON files in Blob Storage into SQL staging.
 3. **Load_Silver_Transactions** – executes the Silver validation and load procedure.
 4. **Load_Gold_Summaries** – executes the Gold summary refresh procedure.
+
+The pipeline does not use a metadata lookup or metadata-driven file-selection activity. Its current source configuration uses the configured Bronze folder and file pattern.
 
 ## Source JSON mapping
 
@@ -36,11 +38,11 @@ The source JSON contains a `data` array. The pipeline maps these fields:
 | `timestamp` | `transaction_timestamp` |
 | `reference` | `reference` |
 
-The source `meta` property is excluded from the SQL mapping.
+The source API's `meta` property is not part of the transaction-column mapping.
 
 ## Event trigger
 
-The storage event trigger listens for Blob Created events in the Bronze container, under the `raw` path, for JSON files. A successful event starts the pipeline when a matching file is created.
+The storage event trigger listens for Blob Created events in the Bronze container, under the `raw` path, for JSON files. A matching new file starts the Azure Data Factory pipeline.
 
 ## Validation performed
 
@@ -48,5 +50,4 @@ A successful test run was followed by SQL checks showing 60 records in Staging, 
 
 ## Operational considerations
 
-The current pipeline is the original working baseline. It truncates staging and uses a wildcard source file pattern. Before treating it as a robust continuous ingestion design, add processed-file tracking, incremental staging loads, retry/recovery handling and protection against overlapping executions.
-
+The current pipeline is a working portfolio baseline. It truncates staging before copying files that match the configured Bronze source pattern. Incremental file tracking, safe replay handling, retry/recovery handling and protection against overlapping executions are potential future improvements.
