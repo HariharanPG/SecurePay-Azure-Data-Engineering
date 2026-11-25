@@ -38,8 +38,6 @@ The source JSON contains a `data` array. The pipeline maps these fields:
 | `timestamp` | `transaction_timestamp` |
 | `reference` | `reference` |
 
-The source API's `meta` property is not part of the transaction-column mapping.
-
 ## Event trigger
 
 The storage event trigger listens for Blob Created events in the Bronze container, under the `raw` path, for JSON files. A matching new file starts the Azure Data Factory pipeline.
