@@ -35,7 +35,3 @@ flowchart LR
 - The source API is polled on a schedule. Event Grid makes the downstream Blob-to-ADF handoff event-driven; it does not make the external API itself a true streaming source.
 - The current ADF pipeline truncates staging and copies files using a wildcard. Incremental file tracking and safe replay handling are future hardening tasks.
 - No real fraud decisions or financial actions are performed.
-
-## Suggested diagram asset
-
-A polished architecture image can be added to this folder later as `securepay-architecture.png`. The Mermaid diagram above is the current source-of-truth overview.
