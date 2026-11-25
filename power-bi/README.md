@@ -21,10 +21,6 @@ The dashboard presents transaction monitoring metrics and breakdowns, including:
 
 Add the Power BI Desktop file here as `SecurePay_Transaction_Monitoring_Dashboard.pbix` when ready. The PBIX is not currently stored in this repository.
 
-## Screenshots
-
-Place sanitized dashboard screenshots in the repository's `screenshots/` folder and link them from the root README.
-
 ## Notes
 
 - Dashboard insights are based on simulated transaction records.
