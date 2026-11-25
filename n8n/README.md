@@ -31,7 +31,3 @@ n8n handles the scheduled external API call and Azure Blob file creation. Azure 
 - The API provides simulated data for learning and demonstration; no real payment data is used.
 - The workflow schedule can create frequent files and Azure events. Monitor executions and cloud usage, and disable the workflow when it is not needed.
 - Do not commit n8n credentials, API keys, Azure connection strings, access keys or exported credential data.
-
-## Workflow export
-
-Export the workflow JSON from n8n and add a sanitized copy here as `securepay_api_to_blob_workflow.json`. Check the export for credential references or sensitive values before committing. The JSON export is not included yet; this README documents the current node sequence.
